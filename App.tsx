@@ -188,13 +188,6 @@ function App() {
              <div className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full hidden sm:block">
                D-Day: Series B+ (2026.01.27)
              </div>
-             <button 
-                onClick={handleAddNew}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-             >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Add Investor</span>
-             </button>
           </div>
         </div>
       </header>
@@ -236,10 +229,8 @@ function App() {
            </div>
         </div>
 
-        {/* Charts & Assistant Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Charts */}
-          <div className="lg:col-span-2 space-y-8">
+        {/* Charts & Alerts Section */}
+        <div className="space-y-8">
             
             {/* Charts Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -300,25 +291,33 @@ function App() {
               </div>
             </div>
 
-          </div>
-
-          {/* Right Column: AI Assistant */}
-          <div className="lg:col-span-1 h-[600px] lg:h-auto sticky top-24">
-            <AssistantPanel investors={investors} stats={stats} />
-          </div>
         </div>
 
         {/* Main Table - Full Width */}
         <div>
             <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800">Pipeline Details</h3>
-            <div className="text-sm text-slate-500">Last Updated: Today</div>
+                <div className="flex items-baseline gap-4">
+                    <h3 className="text-lg font-bold text-slate-800">Pipeline Details</h3>
+                    <span className="text-sm text-slate-500 hidden sm:inline">Last Updated: Today</span>
+                </div>
+                <button 
+                    onClick={handleAddNew}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                >
+                    <Plus size={18} />
+                    <span>Add New Investor</span>
+                </button>
             </div>
             <PipelineTable 
             investors={investors} 
             onEdit={handleEdit}
             onDelete={handleDelete}
             />
+        </div>
+
+        {/* AI Assistant Panel - Moved to Bottom */}
+        <div className="h-[600px]">
+           <AssistantPanel investors={investors} stats={stats} />
         </div>
       </main>
       
