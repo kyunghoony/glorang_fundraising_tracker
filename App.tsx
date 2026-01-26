@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { INITIAL_INVESTORS, TARGETS } from './constants';
+import React, { useMemo, useState, useEffect } from 'react';
+import { TARGETS } from './constants';
 import { Investor, PipelineStats } from './types';
+import { pipelineApi } from './services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { TrendingUp, Target, AlertTriangle, Wallet, Plus } from 'lucide-react';
+import { TrendingUp, Target, AlertTriangle, Wallet, Plus, Loader2 } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { PipelineTable } from './components/PipelineTable';
 import { AssistantPanel } from './components/AssistantPanel';
@@ -11,9 +12,25 @@ import { InvestorModal } from './components/InvestorModal';
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#9CA3AF'];
 
 function App() {
-  const [investors, setInvestors] = useState<Investor[]>(INITIAL_INVESTORS);
+  const [investors, setInvestors] = useState<Investor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvestor, setEditingInvestor] = useState<Investor | null>(null);
+
+  // Load data from Backend (API) on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await pipelineApi.fetchInvestors();
+        setInvestors(data);
+      } catch (error) {
+        console.error("Failed to load investors", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   // Calculate Stats
   const stats: PipelineStats = useMemo(() => {
@@ -56,22 +73,18 @@ function App() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('정말 이 투자사 정보를 삭제하시겠습니까? (Are you sure?)')) {
-        setInvestors(prev => prev.filter(inv => inv.id !== id));
+        // Optimistic update or wait for API? Let's wait for API to ensure consistency
+        const updatedList = await pipelineApi.deleteInvestor(id);
+        setInvestors(updatedList);
     }
   };
 
-  const handleSaveInvestor = (savedInvestor: Investor) => {
-    setInvestors(prev => {
-        // Check if ID exists to determine update vs create
-        const exists = prev.some(inv => inv.id === savedInvestor.id);
-        if (exists) {
-            return prev.map(inv => inv.id === savedInvestor.id ? savedInvestor : inv);
-        } else {
-            return [...prev, savedInvestor];
-        }
-    });
+  const handleSaveInvestor = async (savedInvestor: Investor) => {
+    // Call API to save (persists to backend)
+    const updatedList = await pipelineApi.saveInvestor(savedInvestor);
+    setInvestors(updatedList);
     setIsModalOpen(false);
     setEditingInvestor(null);
   };
@@ -89,6 +102,15 @@ function App() {
     { name: 'Weighted Exp.', amount: Math.round(stats.weightedTotal) },
     { name: 'Verbal Commit', amount: stats.totalVerbal },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500 gap-4">
+        <Loader2 size={40} className="animate-spin text-indigo-600" />
+        <p className="font-medium">Loading Pipeline Data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
@@ -215,25 +237,25 @@ function App() {
               </div>
             </div>
 
-            {/* Main Table */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-800">Pipeline Details</h3>
-                <div className="text-sm text-slate-500">Last Updated: Today</div>
-              </div>
-              <PipelineTable 
-                investors={investors} 
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
-
           </div>
 
           {/* Right Column: AI Assistant */}
           <div className="lg:col-span-1 h-[600px] lg:h-auto sticky top-24">
             <AssistantPanel investors={investors} stats={stats} />
           </div>
+        </div>
+
+        {/* Main Table - Full Width */}
+        <div>
+            <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-800">Pipeline Details</h3>
+            <div className="text-sm text-slate-500">Last Updated: Today</div>
+            </div>
+            <PipelineTable 
+            investors={investors} 
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            />
         </div>
       </main>
       
