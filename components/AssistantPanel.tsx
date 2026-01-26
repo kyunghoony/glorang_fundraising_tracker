@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Bot, RefreshCw, Loader2 } from 'lucide-react';
+import { Bot, RefreshCw, Loader2, Sparkles } from 'lucide-react';
 import { Investor, PipelineStats } from '../types';
 import { generateFundraisingReport } from '../services/geminiService';
-import ReactMarkdown from 'react-markdown'; // Assuming we can use simple markdown rendering or just text
 
 interface AssistantPanelProps {
   investors: Investor[];
@@ -21,41 +20,60 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ investors, stats
   };
 
   return (
-    <div className="bg-white rounded-xl border border-indigo-100 shadow-lg shadow-indigo-50/50 overflow-hidden flex flex-col h-full">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 text-white">
-          <Bot size={20} />
-          <h2 className="font-semibold">AI Fundraising Assistant</h2>
+    <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-indigo-100/30 overflow-hidden flex flex-col h-full">
+      <div className="bg-indigo-600 px-8 py-5 flex justify-between items-center">
+        <div className="flex items-center gap-3 text-white">
+          <div className="p-2 bg-white/20 rounded-xl">
+            <Bot size={24} />
+          </div>
+          <div>
+            <h2 className="font-bold tracking-tight">AI Fundraising Agent</h2>
+            <p className="text-[11px] text-indigo-100 font-medium">Powered by Gemini 2.5 Pro</p>
+          </div>
         </div>
         <button 
           onClick={handleGenerateReport}
           disabled={loading}
-          className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all"
+          className="text-sm bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-5 py-2 rounded-xl flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
         >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          {report ? 'Update Report' : 'Generate Report'}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+          {report ? 'Update Analysis' : 'Generate Report'}
         </button>
       </div>
       
-      <div className="p-6 flex-1 overflow-y-auto bg-slate-50">
+      <div className="p-10 flex-1 overflow-y-auto bg-slate-50/30">
         {loading ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3">
-            <Loader2 size={32} className="animate-spin text-indigo-500" />
-            <p className="text-sm">Analyzing pipeline & dependencies...</p>
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+            <div className="relative">
+                <Loader2 size={48} className="animate-spin text-indigo-500" />
+                <Sparkles className="absolute -top-1 -right-1 text-purple-400 animate-pulse" size={20} />
+            </div>
+            <div className="text-center">
+                <p className="font-bold text-slate-700">Analyzing pipeline dynamics...</p>
+                <p className="text-sm mt-1">Calculating weighted risks and blocker impacts</p>
+            </div>
           </div>
         ) : report ? (
-          <div className="prose prose-sm prose-indigo max-w-none text-slate-700 whitespace-pre-wrap">
-             {/* Simple rendering of markdown-like text */}
+          <div className="max-w-4xl mx-auto prose prose-indigo text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">
              {report}
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4 text-center">
-            <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center">
-              <Bot size={32} className="text-indigo-300" />
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-6 text-center">
+            <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-300">
+              <Bot size={40} />
             </div>
             <div>
-              <p className="font-medium text-slate-600 mb-1">준비되었습니다</p>
-              <p className="text-xs">현재 파이프라인 상태를 분석하고<br/>다음 행동 전략을 제안받으세요.</p>
+              <p className="text-xl font-bold text-slate-800 mb-2">준비되었습니다</p>
+              <p className="text-sm font-medium leading-relaxed">
+                투자사별 확률 분포와 의존성을 분석하여<br/>
+                현재 펀딩 상황에 대한 맞춤형 전략 리포트를 생성합니다.
+              </p>
+              <button 
+                onClick={handleGenerateReport}
+                className="mt-6 px-8 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
+              >
+                리포트 생성하기
+              </button>
             </div>
           </div>
         )}
