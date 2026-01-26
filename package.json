@@ -19,7 +19,8 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "fs": "^0.0.1-security",
-    "url": "^0.11.4"
+    "url": "^0.11.4",
+    "@vercel/postgres": "^0.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

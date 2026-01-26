@@ -1,7 +1,8 @@
 import { Investor } from '../types';
 import { INITIAL_INVESTORS } from '../constants';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+// In Vercel, the API is served from the same origin under /api
+const API_BASE_URL = '/api'; 
 const LOCAL_STORAGE_KEY = 'glorang_investors';
 
 // Helper: Get data from LocalStorage or default to constants
@@ -31,13 +32,17 @@ export const pipelineApi = {
    */
   fetchInvestors: async (): Promise<Investor[]> => {
     try {
+      // Direct call to /api/investors
       const response = await fetch(`${API_BASE_URL}/investors`);
+      
       if (!response.ok) {
-        throw new Error('Backend response not ok');
+        // If 404, maybe the API isn't deployed yet?
+        throw new Error(`Backend response ${response.status}`);
       }
+      
       const data = await response.json();
       
-      // Sync backend data to local storage for future offline use
+      // Sync backend data to local storage for offline use
       setLocalData(data);
       
       return data;
@@ -49,7 +54,6 @@ export const pipelineApi = {
 
   /**
    * Create or Update an investor.
-   * Tries Backend first. If fails, updates LocalStorage.
    */
   saveInvestor: async (investor: Investor): Promise<Investor[]> => {
     try {
@@ -91,11 +95,11 @@ export const pipelineApi = {
 
   /**
    * Delete an investor by ID.
-   * Tries Backend first. If fails, updates LocalStorage.
    */
   deleteInvestor: async (id: string): Promise<Investor[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/investors/${id}`, {
+      // Use query param for DELETE: /api/investor?id=123
+      const response = await fetch(`${API_BASE_URL}/investor?id=${id}`, {
         method: 'DELETE',
       });
       
