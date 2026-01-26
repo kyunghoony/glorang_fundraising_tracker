@@ -1,0 +1,5 @@
+{
+  "name": "Glorang Fundraising Tracker",
+  "description": "A comprehensive dashboard to track Glorang's fundraising pipeline, dependencies, and probability-weighted targets.",
+  "requestFramePermissions": []
+}
