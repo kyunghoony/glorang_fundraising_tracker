@@ -3,7 +3,7 @@ import { TARGETS } from './constants';
 import { Investor, PipelineStats } from './types';
 import { pipelineApi } from './services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { TrendingUp, Target, AlertTriangle, Wallet, Plus, Loader2 } from 'lucide-react';
+import { TrendingUp, Target, AlertTriangle, Wallet, Plus, Loader2, Lock } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
 import { PipelineTable } from './components/PipelineTable';
 import { AssistantPanel } from './components/AssistantPanel';
@@ -12,25 +12,47 @@ import { InvestorModal } from './components/InvestorModal';
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#9CA3AF'];
 
 function App() {
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('glorang_auth') === 'true';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState(false);
+
+  // App Data State
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvestor, setEditingInvestor] = useState<Investor | null>(null);
 
-  // Load data from Backend (API) on mount
+  // Load data from Backend (API) only when authenticated
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await pipelineApi.fetchInvestors();
-        setInvestors(data);
-      } catch (error) {
-        console.error("Failed to load investors", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      const loadData = async () => {
+        setIsLoading(true);
+        try {
+          const data = await pipelineApi.fetchInvestors();
+          setInvestors(data);
+        } catch (error) {
+          console.error("Failed to load investors", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadData();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === 'ghkdxodlf') {
+        setIsAuthenticated(true);
+        sessionStorage.setItem('glorang_auth', 'true');
+        setAuthError(false);
+    } else {
+        setAuthError(true);
+    }
+  };
 
   // Calculate Stats
   const stats: PipelineStats = useMemo(() => {
@@ -75,14 +97,12 @@ function App() {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('정말 이 투자사 정보를 삭제하시겠습니까? (Are you sure?)')) {
-        // Optimistic update or wait for API? Let's wait for API to ensure consistency
         const updatedList = await pipelineApi.deleteInvestor(id);
         setInvestors(updatedList);
     }
   };
 
   const handleSaveInvestor = async (savedInvestor: Investor) => {
-    // Call API to save (persists to backend)
     const updatedList = await pipelineApi.saveInvestor(savedInvestor);
     setInvestors(updatedList);
     setIsModalOpen(false);
@@ -102,6 +122,49 @@ function App() {
     { name: 'Weighted Exp.', amount: Math.round(stats.weightedTotal) },
     { name: 'Verbal Commit', amount: stats.totalVerbal },
   ];
+
+  // Render Login Screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+         <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+             <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-indigo-200">G</div>
+             </div>
+             <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-slate-800">Glorang Fundraising</h2>
+                <p className="text-slate-500 mt-2">Enter access code to view dashboard</p>
+             </div>
+             
+             <form onSubmit={handleLogin} className="space-y-4">
+                <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <input 
+                        type="password" 
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        placeholder="Password"
+                        className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                        autoFocus
+                    />
+                </div>
+                {authError && (
+                  <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center font-medium animate-pulse">
+                    Incorrect password. Please try again.
+                  </div>
+                )}
+                <button 
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition-all shadow-md shadow-indigo-100 active:scale-[0.98]"
+                >
+                    Access Dashboard
+                </button>
+             </form>
+             <p className="text-center text-xs text-slate-300 mt-8">Confidential & Proprietary</p>
+         </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
