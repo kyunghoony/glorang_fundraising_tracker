@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { TARGETS } from './constants';
 import { Investor, PipelineStats } from './types';
 import { pipelineApi } from './services/api';
+import { DUMMY_INVESTORS } from './data/dummyInvestors';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { TrendingUp, Target, Wallet, Plus, Loader2, Lock } from 'lucide-react';
 import { StatsCard } from './components/StatsCard';
@@ -21,6 +22,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvestor, setEditingInvestor] = useState<Investor | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const realInvestorsRef = useRef<Investor[]>([]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,6 +51,19 @@ function App() {
     } else {
         setAuthError(true);
     }
+  };
+
+  const handleToggleDemoMode = () => {
+    if (!isDemoMode) {
+      realInvestorsRef.current = investors;
+      setInvestors(DUMMY_INVESTORS.map(inv => ({ ...inv })));
+      setIsDemoMode(true);
+    } else {
+      setInvestors(realInvestorsRef.current);
+      setIsDemoMode(false);
+    }
+    setIsModalOpen(false);
+    setEditingInvestor(null);
   };
 
   const stats: PipelineStats = useMemo(() => {
@@ -81,14 +97,28 @@ function App() {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('투자사 정보를 삭제하시겠습니까?')) {
+      if (isDemoMode) {
+        setInvestors(prev => prev.filter(i => i.id !== id));
+      } else {
         const updatedList = await pipelineApi.deleteInvestor(id);
         setInvestors(updatedList);
+      }
     }
   };
 
   const handleSaveInvestor = async (savedInvestor: Investor) => {
-    const updatedList = await pipelineApi.saveInvestor(savedInvestor);
-    setInvestors(updatedList);
+    if (isDemoMode) {
+      setInvestors(prev => {
+        const index = prev.findIndex(i => i.id === savedInvestor.id);
+        if (index >= 0) {
+          return prev.map(i => i.id === savedInvestor.id ? savedInvestor : i);
+        }
+        return [...prev, savedInvestor];
+      });
+    } else {
+      const updatedList = await pipelineApi.saveInvestor(savedInvestor);
+      setInvestors(updatedList);
+    }
     setIsModalOpen(false);
     setEditingInvestor(null);
   };
@@ -155,12 +185,30 @@ function App() {
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Glorang <span className="text-slate-400 font-medium">Fundraising</span></h1>
           </div>
           <div className="flex items-center gap-3">
+             <button
+               onClick={handleToggleDemoMode}
+               className={`text-[13px] font-semibold px-4 py-1.5 rounded-full transition-all ${
+                 isDemoMode
+                   ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-300'
+                   : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+               }`}
+             >
+               {isDemoMode ? 'Demo Mode ON' : 'Demo Mode'}
+             </button>
              <div className="text-[13px] font-semibold text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full">
                D-Day: 2026.01.27 (Series B+)
              </div>
           </div>
         </div>
       </header>
+
+      {isDemoMode && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center">
+          <span className="text-sm font-semibold text-amber-700">
+            Demo Mode — 샘플 데이터를 표시 중입니다. 변경사항은 저장되지 않습니다.
+          </span>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
         
